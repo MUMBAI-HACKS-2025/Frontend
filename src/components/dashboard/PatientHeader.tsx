@@ -1,4 +1,4 @@
-import { Calendar } from "lucide-react"
+import { Calendar, FileText } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -12,9 +12,10 @@ interface PatientInfo {
 interface PatientHeaderProps {
   patientInfo: PatientInfo
   onScheduleFollowUp?: () => void
+  onAddClinicalNotes?: () => void
 }
 
-export function PatientHeader({ patientInfo, onScheduleFollowUp }: PatientHeaderProps) {
+export function PatientHeader({ patientInfo, onScheduleFollowUp, onAddClinicalNotes }: PatientHeaderProps) {
   const initials = patientInfo.name
     .split(" ")
     .map((n) => n[0])
@@ -40,13 +41,23 @@ export function PatientHeader({ patientInfo, onScheduleFollowUp }: PatientHeader
               <Calendar className="w-4 h-4" />
               Last Visit: {patientInfo.lastVisit}
             </div>
-            <Button
-              onClick={onScheduleFollowUp}
-              className="mt-2"
-              size="sm"
-            >
-              Schedule Follow-up
-            </Button>
+            <div className="flex gap-2 mt-2">
+              <Button
+                onClick={onAddClinicalNotes}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                Add Notes
+              </Button>
+              <Button
+                onClick={onScheduleFollowUp}
+                size="sm"
+              >
+                Schedule Follow-up
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>

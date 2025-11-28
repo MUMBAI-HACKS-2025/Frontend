@@ -1,4 +1,4 @@
-import { Pill } from "lucide-react"
+import { Pill, Pencil } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,9 +13,10 @@ interface Medication {
 interface MedicationsListProps {
   medications: Medication[]
   onAddMedication?: () => void
+  onEditMedication?: (index: number, medication: Medication) => void
 }
 
-export function MedicationsList({ medications, onAddMedication }: MedicationsListProps) {
+export function MedicationsList({ medications, onAddMedication, onEditMedication }: MedicationsListProps) {
   return (
     <Card>
       <CardHeader>
@@ -29,11 +30,22 @@ export function MedicationsList({ medications, onAddMedication }: MedicationsLis
           {medications.map((med, idx) => (
             <div
               key={idx}
-              className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
             >
               <div className="flex items-start justify-between mb-1">
                 <div className="font-semibold text-gray-900">{med.name}</div>
-                <Badge variant="success">{med.status}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="success">{med.status}</Badge>
+                  {onEditMedication && (
+                    <button
+                      onClick={() => onEditMedication(idx, med)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded"
+                      title="Edit medication"
+                    >
+                      <Pencil className="w-4 h-4 text-gray-600" />
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="text-sm text-gray-600">
                 {med.dose} • {med.frequency}

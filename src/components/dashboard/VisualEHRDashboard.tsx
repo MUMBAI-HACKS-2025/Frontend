@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 import {
   Activity,
   Heart,
@@ -16,8 +16,14 @@ import { VitalSignsGrid } from "./VitalSignsGrid"
 import { HealthTrajectory } from "./HealthTrajectory"
 import { MedicationsList } from "./MedicationsList"
 import { AIInsights } from "./AIInsights"
+import { AddMedicationForm, type Medication } from "./AddMedicationForm"
+import { ClinicalNotesForm, type ClinicalNote } from "./ClinicalNotesForm"
 
 const VisualEHRDashboard = () => {
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [editingMedication, setEditingMedication] = useState<Medication | null>(null)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [isClinicalNotesOpen, setIsClinicalNotesOpen] = useState(false)
   // Sample patient data
   const patientInfo = {
     name: "Sarah Johnson",
@@ -108,12 +114,44 @@ const VisualEHRDashboard = () => {
     },
   ]
 
-  // Medications
-  const medications = [
+  // Medications state
+  const [medications, setMedications] = useState<Medication[]>([
     { name: "Lisinopril", dose: "10mg", frequency: "Daily", status: "Active" },
     { name: "Metformin", dose: "500mg", frequency: "2x Daily", status: "Active" },
     { name: "Atorvastatin", dose: "20mg", frequency: "Evening", status: "Active" },
-  ]
+  ])
+
+  const handleAddMedication = (medication: Medication) => {
+    setMedications((prev) => [...prev, medication])
+  }
+
+  const handleUpdateMedication = (index: number, medication: Medication) => {
+    setMedications((prev) => {
+      const updated = [...prev]
+      updated[index] = medication
+      return updated
+    })
+  }
+
+  const handleEditMedication = (index: number, medication: Medication) => {
+    setEditingMedication(medication)
+    setEditingIndex(index)
+    setIsDrawerOpen(true)
+  }
+
+  const handleCloseDrawer = (open: boolean) => {
+    setIsDrawerOpen(open)
+    if (!open) {
+      setEditingMedication(null)
+      setEditingIndex(null)
+    }
+  }
+
+  const handleSaveClinicalNote = (note: ClinicalNote) => {
+    // Log the note (later will send to API)
+    console.log("Clinical Note saved:", note)
+    // You can add state management here to store notes if needed
+  }
 
   // Health trajectory nodes
   const trajectoryNodes = [
@@ -188,6 +226,7 @@ const VisualEHRDashboard = () => {
           onScheduleFollowUp={() => {
             // TODO: Implement schedule follow-up functionality
           }}
+          onAddClinicalNotes={() => setIsClinicalNotesOpen(true)}
         />
 
         {/* Vital Signs Grid */}
@@ -202,13 +241,33 @@ const VisualEHRDashboard = () => {
           <MedicationsList
             medications={medications}
             onAddMedication={() => {
-              // TODO: Implement add medication functionality
+              setEditingMedication(null)
+              setEditingIndex(null)
+              setIsDrawerOpen(true)
             }}
+            onEditMedication={handleEditMedication}
           />
         </div>
 
         {/* AI Insights */}
         <AIInsights insights={aiInsights} lastUpdated="2 hours ago" />
+
+        {/* Add/Edit Medication Drawer */}
+        <AddMedicationForm
+          open={isDrawerOpen}
+          onOpenChange={handleCloseDrawer}
+          onAddMedication={handleAddMedication}
+          onUpdateMedication={handleUpdateMedication}
+          medicationToEdit={editingMedication}
+          editIndex={editingIndex}
+        />
+
+        {/* Clinical Notes Drawer */}
+        <ClinicalNotesForm
+          open={isClinicalNotesOpen}
+          onOpenChange={setIsClinicalNotesOpen}
+          onSaveNote={handleSaveClinicalNote}
+        />
       </div>
     </div>
   )
