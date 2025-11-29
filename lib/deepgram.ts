@@ -1,7 +1,7 @@
 // Deepgram transcription utility
 // Usage: await transcribeWithDeepgram(audioBlob)
 
-const DEEPGRAM_API_KEY = "ca1f70d17e106139d92deba1df30a3cd8e8bf82e";
+const DEEPGRAM_API_KEY = "your key";
 
 export async function transcribeWithDeepgram(audioBlob: Blob): Promise<string> {
   const url = "https://api.deepgram.com/v1/listen";
