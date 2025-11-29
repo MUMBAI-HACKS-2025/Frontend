@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { HealthTrajectoryChart } from "./HealthTrajectoryChart"
 import { HealthTrajectoryTimeline } from "./HealthTrajectoryTimeline"
+import { LucideIcon } from "lucide-react"
 
 interface HealthDataPoint {
   date: string
@@ -25,8 +26,9 @@ interface TrajectoryNode {
     weight: string
   }
   notes: string
-  icon: React.ComponentType<{ className?: string }>
+  icon: LucideIcon
 }
+
 
 interface HealthTrajectoryProps {
   chartData: HealthDataPoint[]

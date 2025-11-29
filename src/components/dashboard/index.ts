@@ -6,5 +6,5 @@ export { HealthTrajectoryChart } from "./HealthTrajectoryChart"
 export { HealthTrajectoryTimeline } from "./HealthTrajectoryTimeline"
 export { MedicationsList } from "./MedicationsList"
 export { AIInsights } from "./AIInsights"
-export { default as VisualEHRDashboard } from "./VisualEHRDashboard"
-
+export { default as ClinicalNotesHistory } from "./ClinicalNotesHistory"
+export { default as VisualEHRDashboard } from "../../../components/dashboard/VisualEHRDashboard"

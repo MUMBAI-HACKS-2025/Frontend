@@ -1,4 +1,4 @@
-import { Activity, Heart, Droplet, TrendingDown } from "lucide-react"
+import { Heart } from "lucide-react"
 import { VitalSignsCard } from "./VitalSignsCard"
 
 interface VitalSign {

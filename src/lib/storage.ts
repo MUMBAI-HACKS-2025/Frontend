@@ -488,6 +488,15 @@ export function clearAllStorage(): void {
  * Initialize storage with sample data (for demo/testing)
  */
 export function initializeSampleData(): void {
+  // Only initialize when explicitly enabled via VITE_ENABLE_SAMPLE_DATA
+  // This prevents accidental writes to localStorage in production/API-only mode.
+  const meta = (import.meta as unknown as { env?: Record<string, string> })
+  const enableSample = typeof import.meta !== 'undefined' && meta.env?.VITE_ENABLE_SAMPLE_DATA === 'true'
+  if (!enableSample) {
+    console.log('Sample data initialization skipped (VITE_ENABLE_SAMPLE_DATA not set)')
+    return
+  }
+
   // Only initialize if storage is empty
   if (getPatients().length > 0) {
     console.log("Storage already initialized")

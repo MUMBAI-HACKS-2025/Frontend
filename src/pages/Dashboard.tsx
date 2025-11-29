@@ -1,34 +1,16 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Search, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
 import { PatientCardData } from "@/components/dashboard/PatientCard"
 import { AddPatientDrawer } from "@/components/dashboard/AddPatientDrawer"
-import { getPatients, addPatient, initializeSampleData } from "@/lib/storage"
-import { CreatePatientRequest } from "@/types/PatientContract"
+import { staticPatientsList } from "@/data/staticPatient"
 
 export function PatientGrid() {
-  const [patients, setPatients] = useState<PatientCardData[]>([])
+  const [patients, setPatients] = useState<PatientCardData[]>(staticPatientsList)
   const [searchTerm, setSearchTerm] = useState("")
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const navigate = useNavigate()
-
-  // Load patients from localStorage on mount
-  useEffect(() => {
-    // Initialize sample data if no patients exist
-    const existingPatients = getPatients()
-    if (existingPatients.length === 0) {
-      initializeSampleData()
-    }
-    // Map PatientResponse to PatientCardData (filter out inactive status)
-    const patientData = getPatients()
-      .filter(p => p.status !== 'inactive')
-      .map(p => ({
-        ...p,
-        status: p.status as "stable" | "follow-up" | "urgent" | "new"
-      }))
-    setPatients(patientData)
-  }, [])
 
   const filteredPatients = patients.filter((patient) => {
     const matchesSearch =
@@ -38,23 +20,21 @@ export function PatientGrid() {
   })
 
   const handleAddPatient = (newPatient: PatientCardData) => {
-    // Add to localStorage
-    const patientRequest: CreatePatientRequest = {
+    // Add to static list (in a real app, this would call the API)
+    const patientData: PatientCardData = {
+      id: `patient-${Date.now()}`,
+      mrn: `MRN-${Date.now()}`,
       name: newPatient.name,
       age: newPatient.age,
       sex: newPatient.sex || "Other",
       phone: newPatient.phone,
-      city: newPatient.city
+      city: newPatient.city,
+      lastVisit: new Date().toISOString(),
+      status: "new",
+      vitals: undefined,
+      medsCount: 0,
+      lastNoteSnippet: undefined,
     }
-    const savedPatient = addPatient(patientRequest)
-    
-    // Map to PatientCardData format
-    const patientData: PatientCardData = {
-      ...savedPatient,
-      status: savedPatient.status as "stable" | "follow-up" | "urgent" | "new"
-    }
-    
-    // Update state with enriched patient data
     setPatients((prev) => [patientData, ...prev])
   }
 
@@ -143,15 +123,14 @@ export function PatientGrid() {
                     <td className="px-6 py-4 whitespace-nowrap text-gray-700">{patient.lastVisit || "—"}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          patient.status === "stable"
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${patient.status === "stable"
                             ? "bg-green-100 text-green-700"
                             : patient.status === "follow-up"
                               ? "bg-yellow-100 text-yellow-700"
                               : patient.status === "urgent"
                                 ? "bg-red-100 text-red-700"
                                 : "bg-gray-100 text-gray-700"
-                        }`}
+                          }`}
                       >
                         {patient.status ? patient.status.charAt(0).toUpperCase() + patient.status.slice(1) : "—"}
                       </span>

@@ -15,6 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FileText, Upload, Mic, MicOff, Loader2, Eye, ArrowLeft } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { generatePrescriptionPDF, downloadPrescriptionPDF } from "@/lib/prescriptionPDF"
 
 export interface ClinicalNote {
   type: "text" | "voice" | "prescription"
@@ -42,7 +43,7 @@ export function ClinicalNotesForm({
   const [fileName, setFileName] = useState("")
   const [showPreview, setShowPreview] = useState(false)
   const [previewNote, setPreviewNote] = useState<ClinicalNote | null>(null)
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
@@ -77,9 +78,9 @@ export function ClinicalNotesForm({
     audioChunksRef.current = []
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-  const mediaRecorder = new MediaRecorder(stream)
-  mediaRecorderRef.current = mediaRecorder
-  mediaStreamRef.current = stream
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+      mediaStreamRef.current = stream
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -163,20 +164,46 @@ export function ClinicalNotesForm({
     }
   }
 
-  const handleConfirmSave = () => {
+  const handleConfirmSave = async () => {
     const note = previewNote || prepareNote()
     if (note) {
       // Log the note (later will send to API)
       console.log("Clinical Note Saved:", {
         type: note.type,
         content: note.content,
-        file: note.file ? { 
-          name: note.file.name, 
-          size: note.file.size, 
-          type: note.file.type 
+        file: note.file ? {
+          name: note.file.name,
+          size: note.file.size,
+          type: note.file.type
         } : null,
         timestamp: note.timestamp,
       })
+
+      // Generate PDF for prescription-type notes
+      if (note.type === "prescription") {
+        try {
+          const pdfBlob = await generatePrescriptionPDF({
+            patientName: "Patient Name", // In real app, get from context
+            patientAge: 45,
+            patientMRN: "MRN-2025-0099",
+            doctorName: "Dr. S. Nair",
+            date: note.timestamp,
+            content: note.content,
+          })
+
+          // Download the PDF
+          const filename = `prescription_${new Date().getTime()}.pdf`
+          downloadPrescriptionPDF(pdfBlob, filename)
+
+          console.log('Prescription PDF generated:', filename)
+          alert(`✓ Clinical note saved!\n\n📄 PDF generated: ${filename}\n\nCheck your Downloads folder.`)
+        } catch (error) {
+          console.error('Failed to generate prescription PDF:', error)
+          alert('✓ Note saved successfully!\n\n⚠️ PDF generation failed, but your note was saved.')
+        }
+      } else {
+        alert('✓ Clinical note saved successfully!')
+      }
 
       onSaveNote(note)
       onOpenChange(false)
@@ -263,147 +290,147 @@ export function ClinicalNotesForm({
               </CardContent>
             </Card>
           ) : (
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="write" className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Write
-              </TabsTrigger>
-              <TabsTrigger value="voice" className="flex items-center gap-2">
-                <Mic className="w-4 h-4" />
-                Voice
-              </TabsTrigger>
-              <TabsTrigger value="upload" className="flex items-center gap-2">
-                <Upload className="w-4 h-4" />
-                Upload
-              </TabsTrigger>
-            </TabsList>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="write" className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Write
+                </TabsTrigger>
+                <TabsTrigger value="voice" className="flex items-center gap-2">
+                  <Mic className="w-4 h-4" />
+                  Voice
+                </TabsTrigger>
+                <TabsTrigger value="upload" className="flex items-center gap-2">
+                  <Upload className="w-4 h-4" />
+                  Upload
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="write" className="mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="notes">Clinical Notes</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Enter clinical notes here..."
-                  value={textNote}
-                  onChange={(e) => setTextNote(e.target.value)}
-                  className="min-h-[300px]"
-                />
-                <p className="text-sm text-muted-foreground">
-                  {textNote.length} characters
-                </p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="voice" className="mt-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-center gap-4">
-                  {!isRecording ? (
-                    <Button
-                      type="button"
-                      onClick={handleStartRecording}
-                      className="flex items-center gap-2"
-                      size="lg"
-                    >
-                      <Mic className="w-5 h-5" />
-                      Start Recording
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      onClick={handleStopRecording}
-                      variant="destructive"
-                      className="flex items-center gap-2"
-                      size="lg"
-                    >
-                      <MicOff className="w-5 h-5" />
-                      Stop Recording
-                    </Button>
-                  )}
-                </div>
-
-                {isRecording && (
-                  <div className="flex items-center justify-center gap-2 text-red-500">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-sm font-medium">Recording...</span>
-                  </div>
-                )}
-
+              <TabsContent value="write" className="mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="transcript">Transcription</Label>
+                  <Label htmlFor="notes">Clinical Notes</Label>
                   <Textarea
-                    id="transcript"
-                    placeholder="Your transcribed notes will appear here..."
-                    value={transcript}
-                    onChange={(e) => setTranscript(e.target.value)}
+                    id="notes"
+                    placeholder="Enter clinical notes here..."
+                    value={textNote}
+                    onChange={(e) => setTextNote(e.target.value)}
                     className="min-h-[300px]"
-                    readOnly={isRecording}
                   />
                   <p className="text-sm text-muted-foreground">
-                    {transcript.length} characters
+                    {textNote.length} characters
                   </p>
                 </div>
+              </TabsContent>
 
-                {!isRecording && transcript && (
-                  <p className="text-sm text-muted-foreground">
-                    You can edit the transcription before saving.
-                  </p>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="upload" className="mt-4">
-              <div className="space-y-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <Upload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                  <Label htmlFor="file-upload" className="cursor-pointer">
-                    <span className="text-blue-600 hover:text-blue-700 font-medium">
-                      Click to upload
-                    </span>{" "}
-                    or drag and drop
-                  </Label>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Prescription, PDF, or image files
-                  </p>
-                  <input
-                    ref={fileInputRef}
-                    id="file-upload"
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </div>
-
-                {uploadedFile && (
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{fileName}</p>
-                        <p className="text-sm text-gray-500">
-                          {(uploadedFile.size / 1024).toFixed(2)} KB
-                        </p>
-                      </div>
+              <TabsContent value="voice" className="mt-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center gap-4">
+                    {!isRecording ? (
                       <Button
                         type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setUploadedFile(null)
-                          setFileName("")
-                          if (fileInputRef.current) {
-                            fileInputRef.current.value = ""
-                          }
-                        }}
+                        onClick={handleStartRecording}
+                        className="flex items-center gap-2"
+                        size="lg"
                       >
-                        Remove
+                        <Mic className="w-5 h-5" />
+                        Start Recording
                       </Button>
-                    </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        onClick={handleStopRecording}
+                        variant="destructive"
+                        className="flex items-center gap-2"
+                        size="lg"
+                      >
+                        <MicOff className="w-5 h-5" />
+                        Stop Recording
+                      </Button>
+                    )}
                   </div>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
+
+                  {isRecording && (
+                    <div className="flex items-center justify-center gap-2 text-red-500">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm font-medium">Recording...</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="transcript">Transcription</Label>
+                    <Textarea
+                      id="transcript"
+                      placeholder="Your transcribed notes will appear here..."
+                      value={transcript}
+                      onChange={(e) => setTranscript(e.target.value)}
+                      className="min-h-[300px]"
+                      readOnly={isRecording}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      {transcript.length} characters
+                    </p>
+                  </div>
+
+                  {!isRecording && transcript && (
+                    <p className="text-sm text-muted-foreground">
+                      You can edit the transcription before saving.
+                    </p>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="upload" className="mt-4">
+                <div className="space-y-4">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                    <Upload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                    <Label htmlFor="file-upload" className="cursor-pointer">
+                      <span className="text-blue-600 hover:text-blue-700 font-medium">
+                        Click to upload
+                      </span>{" "}
+                      or drag and drop
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Prescription, PDF, or image files
+                    </p>
+                    <input
+                      ref={fileInputRef}
+                      id="file-upload"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </div>
+
+                  {uploadedFile && (
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">{fileName}</p>
+                          <p className="text-sm text-gray-500">
+                            {(uploadedFile.size / 1024).toFixed(2)} KB
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setUploadedFile(null)
+                            setFileName("")
+                            if (fileInputRef.current) {
+                              fileInputRef.current.value = ""
+                            }
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           )}
         </div>
 

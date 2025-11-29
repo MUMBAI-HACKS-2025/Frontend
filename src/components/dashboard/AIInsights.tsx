@@ -1,6 +1,5 @@
 import { Brain, LucideIcon } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 interface AIInsight {
@@ -43,7 +42,7 @@ export function AIInsights({ insights, lastUpdated }: AIInsightsProps) {
   }
 
   return (
-    <Card>
+    <Card className="bg-gradient-to-br from-purple-50/50 to-white">
       <CardHeader>
         <div className="flex items-center gap-2">
           <Brain className="w-5 h-5 text-purple-600" />
@@ -54,36 +53,31 @@ export function AIInsights({ insights, lastUpdated }: AIInsightsProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {insights.map((insight, idx) => {
             const Icon = insight.icon
             const styles = getInsightStyles(insight.type)
             return (
-              <Card
+              <div
                 key={idx}
                 className={cn(
-                  "border-2 transition-all hover:shadow-md",
+                  "flex items-start gap-4 p-4 rounded-lg border transition-all hover:shadow-sm bg-white",
                   styles.container
                 )}
               >
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-3">
-                    <Icon className={cn("w-5 h-5 mt-0.5", styles.icon)} />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-1">{insight.title}</h3>
-                      <p className="text-sm text-gray-600 mb-3">{insight.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500">
-                          Confidence: {insight.confidence}%
-                        </span>
-                        <Button variant="ghost" size="sm" className="text-xs h-auto p-0">
-                          View Details →
-                        </Button>
-                      </div>
-                    </div>
+                <div className={cn("p-2 rounded-full shrink-0", styles.container.replace('border', 'bg-opacity-50'))}>
+                  <Icon className={cn("w-5 h-5", styles.icon)} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-semibold text-gray-900 truncate">{insight.title}</h3>
+                    <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full", styles.container)}>
+                      {insight.confidence}% Conf.
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
+                  <p className="text-sm text-gray-600 leading-relaxed">{insight.description}</p>
+                </div>
+              </div>
             )
           })}
         </div>

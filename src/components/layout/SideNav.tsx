@@ -22,15 +22,19 @@ export function SideNav() {
     { icon: FileText, label: "Clinical Notes", path: "/clinical-notes" },
   ]
 
-  const isActive = (path: string) => location.pathname === path
+  const isActive = (path: string) => {
+    if (path === "/") {
+      return location.pathname === "/"
+    }
+    return location.pathname.startsWith(path)
+  }
 
   return (
     <div className="flex h-full">
       {/* Sidebar */}
       <aside
-        className={`bg-gradient-to-b from-blue-600 to-blue-700 text-white transition-all duration-300 ease-in-out ${
-          isOpen ? "w-64" : "w-20"
-        } flex flex-col shadow-lg`}
+        className={`bg-gradient-to-b from-blue-600 to-blue-700 text-white transition-all duration-300 ease-in-out ${isOpen ? "w-64" : "w-20"
+          } flex flex-col shadow-lg`}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-blue-500">
@@ -59,11 +63,10 @@ export function SideNav() {
             return (
               <Link key={item.path} to={item.path}>
                 <div
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
-                    active
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${active
                       ? "bg-white text-blue-600 shadow-md"
                       : "text-blue-100 hover:bg-blue-500"
-                  }`}
+                    }`}
                 >
                   <Icon size={20} className="flex-shrink-0" />
                   {isOpen && (

@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react"
 import { Search, FileText, Mic, Upload, Lightbulb, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getNotes, getPatients, initializeSampleData } from "@/lib/storage"
-import { ClinicalNote } from "@/lib/storageTypes"
+import { fetchClinicalNotes, fetchPatients, ApiClinicalNote } from "@/lib/api"
 
-interface ClinicalNoteWithPatient extends ClinicalNote {
+interface ClinicalNoteWithPatient extends ApiClinicalNote {
   patientName: string
+  // Map 'created_at' to 'date' to match previous UI usage
+  date: string
+  transcript?: string
+  insights?: string[]
+  actions?: string[]
 }
 
 export function ClinicalNotes() {
@@ -13,24 +17,30 @@ export function ClinicalNotes() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState<"all" | "text" | "voice" | "prescription">("all")
 
-  // Load notes from localStorage on mount
+  // Load notes from API on mount
   useEffect(() => {
-    // Initialize sample data if no notes exist
-    const existingNotes = getNotes()
-    if (existingNotes.length === 0) {
-      initializeSampleData()
-    }
-    
-    // Enrich notes with patient names (FK lookup)
-    const patients = getPatients()
-    const enrichedNotes = getNotes().map(note => {
-      const patient = patients.find(p => p.id === note.patientId)
-      return {
-        ...note,
-        patientName: patient?.name || `Patient #${note.patientId}`
+    let mounted = true
+    const load = async () => {
+      try {
+        const apiPatients = await fetchPatients(0, 100)
+        const patientsById = new Map(apiPatients.map((p) => [p.patient_id, p.name]))
+        const apiNotes = await fetchClinicalNotes("all")
+        const enriched = apiNotes.map((note: ApiClinicalNote) => ({
+          ...note,
+          date: note.created_at || new Date().toISOString(),
+          patientName: patientsById.get(note.patient_id) || `Patient #${note.patient_id}`,
+        }))
+        if (mounted) setNotes(enriched as ClinicalNoteWithPatient[])
+      } catch (err) {
+        console.error('Failed to load clinical notes from API:', err)
+        if (mounted) setNotes([])
       }
-    })
-    setNotes(enrichedNotes)
+    }
+
+    load()
+    return () => {
+      mounted = false
+    }
   }, [])
 
   const filteredNotes = notes.filter((note) => {
@@ -131,7 +141,7 @@ export function ClinicalNotes() {
         ) : (
           <div className="space-y-4">
             {filteredNotes.map((note) => (
-              <div key={note.id} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition">
+              <div key={note.note_id} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
